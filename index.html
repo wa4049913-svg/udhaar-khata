@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="ur-Latn"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a8f5b"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon.svg">
+<title>Udhaar Khata</title>
+<style>
+:root{--g:#0a8f5b;--r:#e8453c;--y:#ffb703;--b:#1d4ed8;--bg:#f3f6ef;--t:#1b2a22}
+*{box-sizing:border-box;margin:0;font-family:system-ui,"Noto Nastaliq Urdu",sans-serif}
+body{background:var(--bg);color:var(--t);padding-bottom:env(safe-area-inset-bottom)}
+header{background:var(--g);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:5}
+header h1{font-size:21px;flex:1}.bk{background:#fff3;border:0;color:#fff;font-size:24px;border-radius:12px;padding:6px 14px}
+main{padding:14px;max-width:520px;margin:auto}
+.btn{display:block;width:100%;border:0;border-radius:16px;padding:18px;font-size:20px;font-weight:700;color:#fff;background:var(--g);margin:8px 0}
+.btn.r{background:var(--r)}.btn.y{background:var(--y);color:#222}.btn.b{background:var(--b)}.btn.s{background:#e0e6e1;color:#222}
+.card{background:#fff;border-radius:16px;padding:14px;margin:8px 0;box-shadow:0 1px 4px #0002}
+.row{display:flex;gap:10px;align-items:center}
+.av{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:24px;font-weight:700;flex:none}
+input,textarea{width:100%;padding:16px;font-size:20px;border:2px solid #cbd5cd;border-radius:14px;margin:6px 0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.amt{padding:20px;font-size:22px;font-weight:700;border:0;border-radius:14px;background:#ffe9a0;color:#222}
+.big{font-size:28px;font-weight:800}.red{color:var(--r)}.grn{color:var(--g)}.sm{font-size:14px;color:#667}
+canvas{width:100%;height:180px;background:#fff;border:2px dashed #8a9;border-radius:14px;touch-action:none}
+.mini{width:auto!important;padding:6px 12px!important;font-size:14px!important;margin:0!important}
+body.ur{line-height:1.9}
+</style></head><body>
+<header id="hd"></header><main id="app"></main>
+<script>
+const $=s=>document.querySelector(s),A=$('#app'),H=$('#hd');
+let DB=null;try{DB=JSON.parse(localStorage.getItem('uk'))}catch(e){}
+DB=DB||{pin:null,shop:'',c:[],t:[],snz:{}};
+const save=()=>{try{localStorage.setItem('uk',JSON.stringify(DB))}catch(e){alert('Phone me jagah nahi. Pehle Backup lein.')}};
+const rs=n=>'Rs. '+Number(n).toLocaleString('en-PK');
+const id=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const day=d=>new Date(d).toLocaleDateString('en-GB');
+const esc=s=>String(s).replace(/[&<>"']/g,m=>'&#'+m.charCodeAt(0)+';');
+
+// ---- Zaban: Roman Urdu / اردو ----
+let LANG='rm';try{LANG=localStorage.getItem('uk_lang')||'rm'}catch(e){}
+const D={'Udhaar Khata':'ادھار کھاتہ','Dukan ka naam':'دکان کا نام','Naya customer':'نیا گاہک','Reminder (30 din+)':'یاد دہانی (30 دن سے اوپر)','Message':'پیغام',
+'Nayi PIN banayein':'نیا PIN بنائیں','PIN dobara likhein':'PIN دوبارہ لکھیں','PIN likhein':'PIN لکھیں','Aage chalo':'آگے چلیں',
+'Aaj ka udhaar':'آج کا ادھار','Aaj ki wasooli':'آج کی وصولی','Kul baqaya (sab customers)':'کل باقی (تمام گاہک)','➕ Naya customer':'➕ نیا گاہک','🔍 Naam ya number':'🔍 نام یا نمبر',
+'💾 Backup':'💾 بیک اپ','📂 Restore':'📂 واپس لائیں','🔒 Lock':'🔒 تالا لگائیں','Koi customer nahi. "Naya customer" dabayein.':'کوئی گاہک نہیں۔ "نیا گاہک" دبائیں۔','Hisaab saaf':'حساب صاف',
+'Poora naam':'پورا نام','Number (main)':'نمبر (اصل)','+ Aur number':'+ اور نمبر','Doosra number':'دوسرا نمبر','Customer ka dastakhat (ungli se):':'گاہک کے دستخط (انگلی سے):','Saaf karo':'صاف کریں','✅ Theek hai, save':'✅ ٹھیک ہے، محفوظ کریں',
+'➕ Udhaar':'➕ ادھار','💰 Jama':'💰 جمع','🔔 Reminder bhejo':'🔔 یاد دہانی بھیجیں','Numbers (dabane se main ban jata hai)':'نمبر (دبانے سے اصل نمبر بن جاتا ہے)','Dastakhat':'دستخط','Ledger':'کھاتہ','Abhi koi entry nahi':'ابھی کوئی اندراج نہیں','Radd':'منسوخ','Radd hui':'منسوخ ہو گئی','Baqaya':'باقی',
+'Raqam (Rs.)':'رقم (روپے)','Note (zaroori nahi)':'نوٹ (ضروری نہیں)','✅ Save':'✅ محفوظ کریں','Dekho aur bhejo':'دیکھیں اور بھیجیں','Baad me':'بعد میں','Abhi koi 30 din purana baqaya nahi 👍':'ابھی کوئی 30 دن پرانا باقی نہیں 👍',
+'Bhejne se pehle dekh lein, badal bhi sakte hain:':'بھیجنے سے پہلے دیکھ لیں، بدل بھی سکتے ہیں:','WhatsApp se bhejo':'واٹس ایپ سے بھیجیں','SMS se bhejo':'ایس ایم ایس سے بھیجیں',
+'Phone me jagah nahi. Pehle Backup lein.':'فون میں جگہ نہیں۔ پہلے بیک اپ لیں۔','PIN match nahi hui, dobara banayein':'PIN مختلف ہیں، دوبارہ بنائیں','PIN galat hai':'PIN غلط ہے','Poora naam likhein':'پورا نام لکھیں','Kam az kam ek number likhein':'کم از کم ایک نمبر لکھیں',
+'Dastakhat nahi hai. Phir bhi save karein?':'دستخط نہیں ہیں۔ پھر بھی محفوظ کریں؟','Ye entry radd karein? (Ledger me nazar aati rahegi)':'یہ اندراج منسوخ کریں؟ (کھاتے میں نظر آتا رہے گا)','Raqam likhein':'رقم لکھیں',
+'Raqam baqaya se zyada hai. Phir bhi save karein?':'رقم باقی سے زیادہ ہے۔ پھر بھی محفوظ کریں؟','Maujooda data badal jayega. Theek hai?':'موجودہ ڈیٹا بدل جائے گا۔ ٹھیک ہے؟','File sahi nahi hai':'فائل درست نہیں ہے'};
+const P=[[/^🔔 Reminder bhejne hain \((\d+)\)$/,'🔔 یاد دہانی بھیجنی ہے ($1)'],[/^Baqaya: (.*)$/,'باقی: $1'],[/^Udhaar: (.*)$/,'ادھار: $1'],[/^Jama: (.*)$/,'جمع: $1'],
+[/^Udhaar (Rs\..*)$/,'ادھار $1'],[/^Jama (Rs\..*)$/,'جمع $1'],[/^Baqaya · (\d+) din purana$/,'باقی · $1 دن پرانا'],[/^(Rs\. [\d,.]+) baqaya$/,'$1 باقی'],
+[/^Poora baqaya \((.*)\)$/,'پورا باقی ($1)'],[/^(Rs\. [\d,.]+) · (\d+) din$/,'$1 · $2 دن'],[/^Save ho gaya\. Baqaya: (.*)$/,'محفوظ ہو گیا۔ باقی: $1']];
+function tr(s){if(LANG!='ur')return s;if(D[s])return D[s];for(const[r,v]of P)if(r.test(s))return s.replace(r,v);return s}
+function tdom(root){const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let n;while(n=w.nextNode()){const v=n.nodeValue.trim();if(v){const t=tr(v);if(t!==v)n.nodeValue=n.nodeValue.replace(v,t)}}
+ root.querySelectorAll('[placeholder]').forEach(e=>e.placeholder=tr(e.placeholder))}
+function applyLang(){const u=LANG=='ur';document.documentElement.dir=u?'rtl':'ltr';document.documentElement.lang=u?'ur':'ur-Latn';document.body.className=u?'ur':'';tdom(H);tdom(A)}
+function setLang(){LANG=LANG=='ur'?'rm':'ur';try{localStorage.setItem('uk_lang',LANG)}catch(e){}render()}
+{const _a=window.alert.bind(window),_c=window.confirm.bind(window);window.alert=m=>_a(tr(m));window.confirm=m=>_c(tr(m))}
+const COL=['#e8453c','#0a8f5b','#1d4ed8','#f59e0b','#9333ea','#0891b2','#db2777'];
+const av=n=>`<div class="av" style="background:${COL[[...n].reduce((s,c)=>s+c.charCodeAt(0),0)%7]}">${esc(n.trim()[0]||'?')}</div>`;
+function beep(){try{const a=new(window.AudioContext||webkitAudioContext)(),o=a.createOscillator();o.connect(a.destination);o.frequency.value=880;o.start();setTimeout(()=>{o.stop();a.close()},150)}catch(e){}navigator.vibrate&&navigator.vibrate(120)}
+function toast(m){const t=document.createElement('div');t.textContent=tr(m);t.style.cssText='position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:14px 22px;border-radius:30px;font-size:18px;z-index:9;text-align:center';document.body.appendChild(t);setTimeout(()=>t.remove(),2800)}
+// hisaab: baqaya = udhaar - jama (radd entries shamil nahi)
+const tx=c=>DB.t.filter(x=>x.c==c&&!x.v);
+const bal=c=>tx(c).reduce((s,x)=>s+(x.k=='u'?x.a:-x.a),0);
+// jama hamesha purane udhaar me pehle katta hai; 30 din purane baqaya udhaar se gine jate hain
+function age(c){let j=tx(c).filter(x=>x.k=='j').reduce((s,x)=>s+x.a,0);
+ for(const x of tx(c).filter(x=>x.k=='u').sort((a,b)=>a.d-b.d)){if(j>=x.a)j-=x.a;else return Math.floor((Date.now()-x.d)/864e5)}return 0}
+const remList=()=>DB.c.filter(c=>bal(c.id)>0&&age(c.id)>=30&&!(DB.snz[c.id]>Date.now()));
+let S={v:'lock'},pin='',tmp='',sg=[];
+function go(v,x={}){S={v,...x};render();scrollTo(0,0)}
+const hdr=(t,b)=>{H.innerHTML=(b?`<button class="bk" onclick="${b}">${LANG=='ur'?'→':'←'}</button>`:'')+`<h1>${esc(t)}</h1><button class="bk" style="font-size:15px" onclick="setLang()">${LANG=='ur'?'Roman':'اردو'}</button>`};
+async function hp(p){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('uk'+p));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+// ---- PIN ----
+function vLock(){hdr('Udhaar Khata');const f=!DB.pin;
+ A.innerHTML=`<div class="card" style="text-align:center"><p class="big">${f?(tmp?'PIN dobara likhein':'Nayi PIN banayein'):'PIN likhein'}</p><p class="big" id="dots" style="letter-spacing:10px;margin:14px">○○○○</p><div class="grid" style="grid-template-columns:repeat(3,1fr);direction:ltr">${[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map(k=>`<button class="amt" onclick="key('${k}')">${k}</button>`).join('')}</div></div>`}
+async function key(k){
+ if(k=='C')pin='';else if(k=='⌫')pin=pin.slice(0,-1);else if(pin.length<4)pin+=k;
+ $('#dots').textContent='●'.repeat(pin.length)+'○'.repeat(4-pin.length);
+ if(pin.length<4)return;const p=pin;pin='';
+ if(!DB.pin){if(!tmp){tmp=p;return vLock()}
+  if(tmp!=p){tmp='';alert('PIN match nahi hui, dobara banayein');return vLock()}
+  DB.pin=await hp(p);tmp='';save();beep();return go(DB.shop?'home':'shop')}
+ if(await hp(p)==DB.pin){beep();go(DB.shop?'home':'shop')}
+ else{navigator.vibrate&&navigator.vibrate([200,100,200]);alert('PIN galat hai');vLock()}}
+function vShop(){hdr('Dukan ka naam');
+ A.innerHTML=`<input id="sn" placeholder="Dukan ka naam"><button class="btn" onclick="DB.shop=$('#sn').value.trim()||'Meri Dukan';save();go('home')">Aage chalo</button>`}
+// ---- Home ----
+const lst=q=>{q=q.toLowerCase();const r=DB.c.filter(c=>c.n.toLowerCase().includes(q)||c.p.some(p=>p.includes(q))).sort((a,b)=>bal(b.id)-bal(a.id));
+ return r.length?r.map(c=>`<div class="card row" onclick="go('cust',{id:'${c.id}'})">${av(c.n)}<div style="flex:1"><b style="font-size:20px">${esc(c.n)}</b><div class="${bal(c.id)>0?'red':'grn'}">${bal(c.id)>0?rs(bal(c.id))+' baqaya':'Hisaab saaf'}</div></div></div>`).join(''):'<p class="sm" style="text-align:center;padding:20px">Koi customer nahi. "Naya customer" dabayein.</p>'};
+function vHome(){hdr(DB.shop);
+ const t0=new Date().setHours(0,0,0,0),td=DB.t.filter(x=>!x.v&&x.d>=t0),sum=k=>td.filter(x=>x.k==k).reduce((s,x)=>s+x.a,0);
+ const tot=DB.c.reduce((s,c)=>s+Math.max(bal(c.id),0),0);
+ A.innerHTML=`<div class="grid"><div class="card"><div class="sm">Aaj ka udhaar</div><div class="big red">${rs(sum('u'))}</div></div><div class="card"><div class="sm">Aaj ki wasooli</div><div class="big grn">${rs(sum('j'))}</div></div></div>
+ <div class="card"><div class="sm">Kul baqaya (sab customers)</div><div class="big">${rs(tot)}</div></div>
+ <button class="btn y" onclick="go('rem')">🔔 Reminder bhejne hain (${remList().length})</button>
+ <button class="btn" onclick="sg=[];go('add')">➕ Naya customer</button>
+ <input id="q" placeholder="🔍 Naam ya number" oninput="$('#lst').innerHTML=lst(this.value);tdom($('#lst'))"><div id="lst">${lst('')}</div>
+ <div class="grid"><button class="btn s" onclick="backup()">💾 Backup</button><button class="btn s" onclick="$('#fl').click()">📂 Restore</button></div>
+ <input type="file" id="fl" accept=".json" hidden onchange="restore(this.files[0])"><button class="btn s" onclick="go('lock')">🔒 Lock</button>`}
+// ---- Naya customer ----
+function addPh(){const i=document.createElement('input');i.type='tel';i.inputMode='tel';i.placeholder=tr('Doosra number');$('#ph').appendChild(i)}
+function vAdd(){hdr('Naya customer',"go('home')");
+ A.innerHTML=`<input id="nm" placeholder="Poora naam"><div id="ph"><input type="tel" inputmode="tel" placeholder="Number (main)"></div><button class="btn s" onclick="addPh()">+ Aur number</button>
+ <p class="sm" style="margin-top:8px">Customer ka dastakhat (ungli se):</p><canvas id="cv"></canvas>
+ <button class="btn s" onclick="sg=[];sig()">Saaf karo</button><button class="btn" onclick="addC()">✅ Theek hai, save</button>`;sig()}
+function sig(){const c=$('#cv'),r=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*r;c.height=h*r;const x=c.getContext('2d');x.scale(r,r);x.lineWidth=3;x.lineCap='round';let d=0;
+ const pt=e=>{const b=c.getBoundingClientRect();return[Math.round((e.clientX-b.left)/w*300),Math.round((e.clientY-b.top)/h*120)]},px=p=>[p[0]/300*w,p[1]/120*h];
+ sg.forEach(s=>{x.beginPath();s.forEach((p,i)=>{const q=px(p);i?x.lineTo(q[0],q[1]):x.moveTo(q[0],q[1])});x.stroke()});
+ c.onpointerdown=e=>{d=1;c.setPointerCapture(e.pointerId);const p=pt(e);sg.push([p]);x.beginPath();const q=px(p);x.moveTo(q[0],q[1])};
+ c.onpointermove=e=>{if(!d)return;const p=pt(e);sg[sg.length-1].push(p);const q=px(p);x.lineTo(q[0],q[1]);x.stroke()};
+ c.onpointerup=c.onpointercancel=()=>d=0}
+function addC(){const n=$('#nm').value.trim(),p=[...document.querySelectorAll('#ph input')].map(i=>i.value.trim()).filter(Boolean);
+ if(!n)return alert('Poora naam likhein');if(!p.length)return alert('Kam az kam ek number likhein');
+ if(!sg.some(s=>s.length>1)&&!confirm('Dastakhat nahi hai. Phir bhi save karein?'))return;
+ const c={id:id(),n,p,sg:sg.filter(s=>s.length>1).map(s=>s.map(q=>q.join(',')).join(' ')),d:Date.now()};DB.c.push(c);save();beep();go('cust',{id:c.id})}
+// ---- Customer profile + ledger ----
+function mainPh(i,k){const c=DB.c.find(x=>x.id==i);c.p.unshift(c.p.splice(k,1)[0]);save();render()}
+function rad(i){if(!confirm('Ye entry radd karein? (Ledger me nazar aati rahegi)'))return;DB.t.find(x=>x.id==i).v=1;save();render()}
+function vCust(){const c=DB.c.find(x=>x.id==S.id),b=bal(c.id),a=age(c.id);hdr(c.n,"go('home')");let run=0;
+ const rows=DB.t.filter(x=>x.c==c.id).sort((a,b)=>a.d-b.d).map(x=>{if(!x.v)run+=x.k=='u'?x.a:-x.a;
+  return`<div class="card" style="${x.v?'opacity:.5;text-decoration:line-through':''}"><div class="row"><b class="${x.k=='u'?'red':'grn'}" style="flex:1">${x.k=='u'?'Udhaar':'Jama'} ${rs(x.a)}</b><span class="sm">${day(x.d)}</span></div>${x.n?`<div class="sm">${esc(x.n)}</div>`:''}<div class="row"><span class="sm" style="flex:1">${x.v?'Radd hui':'Baqaya: '+rs(run)}</span>${x.v?'':`<button class="btn s mini" onclick="rad('${x.id}')">Radd</button>`}</div></div>`}).reverse();
+ A.innerHTML=`<div class="card row">${av(c.n)}<div style="flex:1"><div class="big ${b>0?'red':'grn'}">${rs(b)}</div><div class="sm">${b>0?'Baqaya'+(a?' · '+a+' din purana':''):'Hisaab saaf'}</div></div></div>
+ <div class="grid"><button class="btn r" onclick="go('amt',{id:'${c.id}',k:'u'})">➕ Udhaar</button><button class="btn" onclick="go('amt',{id:'${c.id}',k:'j'})">💰 Jama</button></div>
+ ${b>0?`<button class="btn y" onclick="go('msg',{id:'${c.id}'})">🔔 Reminder bhejo</button>`:''}
+ <div class="card"><div class="sm">Numbers (dabane se main ban jata hai)</div>${c.p.map((p,i)=>`<div onclick="mainPh('${c.id}',${i})" style="font-size:20px;padding:6px 0">${i?'📞':'⭐'} ${esc(p)}</div>`).join('')}</div>
+ ${c.sg.length?`<div class="card"><div class="sm">Dastakhat</div><svg viewBox="0 0 300 120" style="width:100%;height:100px">${c.sg.map(s=>`<polyline points="${s}" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg></div>`:''}
+ <h3 style="margin:12px 0 4px">Ledger</h3>${rows.join('')||'<p class="sm">Abhi koi entry nahi</p>'}`}
+// ---- Udhaar / Jama ----
+const add=n=>{const e=$('#am');e.value=(+e.value||0)+n};
+function vAmt(){const c=DB.c.find(x=>x.id==S.id),u=S.k=='u',b=bal(c.id);hdr((u?'Udhaar: ':'Jama: ')+c.n,`go('cust',{id:'${c.id}'})`);
+ A.innerHTML=`<input id="am" type="number" inputmode="numeric" placeholder="Raqam (Rs.)" style="font-size:32px;text-align:center"><div class="grid">${[100,500,1000,5000].map(n=>`<button class="amt" onclick="add(${n})">+ ${n}</button>`).join('')}</div>
+ ${!u&&b>0?`<button class="btn y" onclick="$('#am').value=${b}">Poora baqaya (${rs(b)})</button>`:''}
+ <input id="nt" placeholder="Note (zaroori nahi)"><button class="btn ${u?'r':''}" onclick="saveT()">✅ Save</button><button class="btn s" onclick="$('#am').value=''">Saaf karo</button>`}
+function saveT(){const a=Math.round(+$('#am').value),c=S.id;if(!(a>0))return alert('Raqam likhein');
+ if(S.k=='j'&&a>bal(c)&&!confirm('Raqam baqaya se zyada hai. Phir bhi save karein?'))return;
+ DB.t.push({id:id(),c,k:S.k,a,n:$('#nt').value.trim(),d:Date.now(),v:0});save();beep();go('cust',{id:c});toast('Save ho gaya. Baqaya: '+rs(bal(c)))}
+// ---- Reminder (dukan wale ki ijazat se) ----
+function snooze(i){DB.snz[i]=Date.now()+7*864e5;save();render()}
+function vRem(){hdr('Reminder (30 din+)',"go('home')");const l=remList();
+ A.innerHTML=l.length?l.map(c=>`<div class="card"><div class="row">${av(c.n)}<div style="flex:1"><b style="font-size:20px">${esc(c.n)}</b><div class="red">${rs(bal(c.id))} · ${age(c.id)} din</div></div></div><div class="grid"><button class="btn mini" style="padding:14px!important;font-size:17px!important" onclick="go('msg',{id:'${c.id}'})">Dekho aur bhejo</button><button class="btn s mini" style="padding:14px!important;font-size:17px!important" onclick="snooze('${c.id}')">Baad me</button></div></div>`).join(''):'<p class="sm" style="text-align:center;padding:30px">Abhi koi 30 din purana baqaya nahi 👍</p>'}
+function vMsg(){const c=DB.c.find(x=>x.id==S.id);hdr('Message',`go('cust',{id:'${c.id}'})`);
+ A.innerHTML=`<p class="sm">Bhejne se pehle dekh lein, badal bhi sakte hain:</p><textarea id="mg" style="height:150px;font-size:18px">${esc(LANG=='ur'?`السلام علیکم ${c.n}، ${DB.shop} سے آپ کا ${rs(bal(c.id))} باقی ہے۔ مہربانی کر کے ادا کر دیں۔ شکریہ۔`:`Assalam o Alaikum ${c.n}, ${DB.shop} se aap ka ${rs(bal(c.id))} baqaya hai. Meherbani karke ada kar dein. Shukriya.`)}</textarea>
+ <button class="btn" onclick="snd('${c.id}','w')">WhatsApp se bhejo</button><button class="btn b" onclick="snd('${c.id}','s')">SMS se bhejo</button>`}
+function snd(i,t){const c=DB.c.find(x=>x.id==i);let p=c.p[0].replace(/\D/g,'');if(p[0]=='0')p='92'+p.slice(1);const m=encodeURIComponent($('#mg').value);
+ DB.snz[i]=Date.now()+7*864e5;save();open(t=='w'?`https://wa.me/${p}?text=${m}`:`sms:+${p}?body=${m}`,'_blank')}
+// ---- Backup / Restore ----
+async function backup(){const f=new File([JSON.stringify(DB)],`udhaar-khata-${new Date().toISOString().slice(0,10)}.json`,{type:'application/json'});
+ if(navigator.canShare&&navigator.canShare({files:[f]})){try{return await navigator.share({files:[f]})}catch(e){return}}
+ const a=document.createElement('a');a.href=URL.createObjectURL(f);a.download=f.name;a.click()}
+function restore(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.c||!d.t)throw 0;if(confirm('Maujooda data badal jayega. Theek hai?')){DB=d;save();go('home')}}catch(e){alert('File sahi nahi hai')}};r.readAsText(f)}
+function render(){({lock:vLock,shop:vShop,home:vHome,add:vAdd,cust:vCust,amt:vAmt,rem:vRem,msg:vMsg})[S.v]();applyLang()}
+render();
+navigator.storage&&navigator.storage.persist&&navigator.storage.persist();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
